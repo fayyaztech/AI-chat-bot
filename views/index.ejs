@@ -6,6 +6,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Chat Interface</title>
   <link href="/css/output.css" rel="stylesheet">
+  <!-- Add KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <!-- Add Marked -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/lib/marked.umd.js"></script>
+  <style>
+    .message-content {
+      overflow-x: auto;
+    }
+
+    .message-content pre {
+      background: #f4f4f4;
+      padding: 1em;
+      border-radius: 0.5em;
+      margin: 0.5em 0;
+    }
+
+    .message-content code {
+      background: #f4f4f4;
+      padding: 0.2em 0.4em;
+      border-radius: 0.3em;
+    }
+
+    .message-content p {
+      margin: 0.5em 0;
+    }
+
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.5em 0;
+    }
+  </style>
 </head>
 
 <body class="bg-gray-100 h-screen">
@@ -55,14 +88,47 @@
       }
     });
 
+    // Configure marked
+    marked.use({
+      mangle: false,
+      headerIds: false,
+      breaks: true
+    });
+
+    function formatMessage(content) {
+      // Remove <think> tags if present
+      content = content.replace(/<think>[\s\S]*?<\/think>/g, '');
+
+      // Convert LaTeX-style math to KaTeX HTML
+      content = content.replace(/\\\((.*?)\\\)/g, (match, p1) => {
+        try {
+          return katex.renderToString(p1, { displayMode: false });
+        } catch (e) {
+          return match;
+        }
+      });
+
+      content = content.replace(/\\\[(.*?)\\\]/g, (match, p1) => {
+        try {
+          return katex.renderToString(p1, { displayMode: true });
+        } catch (e) {
+          return match;
+        }
+      });
+
+      // Convert markdown to HTML
+      return marked.parse(content);
+    }
+
     function appendMessage(content, isUser = false) {
       const messageDiv = document.createElement('div');
       messageDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+      const formattedContent = isUser ? content : formatMessage(content);
 
       messageDiv.innerHTML = `
         <div class="${isUser ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'} 
-                             rounded-lg px-4 py-2 max-w-[70%] whitespace-pre-wrap">
-          ${content}
+                             rounded-lg px-4 py-2 max-w-[70%] message-content">
+          ${formattedContent}
         </div>
       `;
 
