@@ -24,15 +24,22 @@ app.post("/chat", async (req, res) => {
   try {
     const response = await axios.post("http://localhost:11434/api/generate", {
       model: "deepseek-r1:1.5b",
-      prompt: message,
-      stream: true,
+      prompt: `Instructions: Please provide direct, concise answers without any thinking process or meta-commentary. Format math with LaTeX notation using \\( \\) for inline and \\[ \\] for display math. Use markdown for formatting.\n\n${message}`,
+      stream: true
     }, {
-      responseType: "stream",
+      responseType: "stream"
     });
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
+
+    // Handle client disconnect
+    req.on('close', () => {
+      if (response.data) {
+        response.data.destroy();
+      }
+    });
 
     let accumulatedText = '';
 
