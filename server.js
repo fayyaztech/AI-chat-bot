@@ -15,16 +15,34 @@ app.get("/", (req, res) => {
 });
 
 app.post("/chat", async (req, res) => {
-  const { message } = req.body;
+  const { message, history } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: "Message is required" });
   }
 
+  // Format conversation history for the model
+  const conversationHistory = history
+    .filter(msg => msg.role !== 'system')
+    .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+    .join('\n');
+
   try {
     const response = await axios.post("http://localhost:11434/api/generate", {
       model: "deepseek-r1:1.5b",
-      prompt: `Instructions: Please provide direct, concise answers without any thinking process or meta-commentary. Format math with LaTeX notation using \\( \\) for inline and \\[ \\] for display math. Use markdown for formatting.\n\n${message}`,
+      prompt: `${history[0].content}
+
+ You are an AI assistant. When answering questions, you should:
+ 1. Only use information that was previously mentioned in the conversation
+ 2. If the answer can be found in the previous messages, use that exact information
+ 3. If the information wasn't mentioned before, say "I can only answer based on the information previously discussed"
+ 4. Be concise and direct
+ 
+ Previous conversation:
+ ${conversationHistory}
+ 
+ User: ${message}
+ Assistant:`,
       stream: true
     }, {
       responseType: "stream"
