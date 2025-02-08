@@ -49,7 +49,7 @@ An interactive chat application that provides context-aware responses using the 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/ai-chat-assistant.git
+git clone https://github.com/fayyaztech/ai-chat-assistant.git
 cd ai-chat-assistant
 ```
 
